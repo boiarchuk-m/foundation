@@ -2,6 +2,8 @@
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+import dj_database_url
+from decouple import config
 load_dotenv()
 
 
@@ -10,6 +12,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 DEBUG = os.environ.get('DEBUG')
+
+
+
+DATABASES = {
+    'default': dj_database_url.config(
+        default=config('DATABASE_URL', default='sqlite:///db.sqlite3')
+    )
+}
 ALLOWED_HOSTS = []
 
 
@@ -47,7 +57,8 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',  # React frontend URL
+    'http://localhost:3000',
+    'http://localhost:3001', # React frontend URL
 ]
 
 AUTH_USER_MODEL = 'foundation_app.CustomUser'
