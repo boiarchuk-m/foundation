@@ -21,7 +21,7 @@ class Request(models.Model):
         ('denied', 'Denied'),
     ]
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="requests")
     full_name = models.CharField(max_length=255, verbose_name="ПІБ")
     military_unit_number = models.CharField(max_length=100, verbose_name="Номер військової частини")
     phone_number = models.CharField(max_length=20, verbose_name="Номер телефону")

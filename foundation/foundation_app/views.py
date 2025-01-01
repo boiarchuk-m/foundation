@@ -5,9 +5,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserSerializer, RequestSerializer, UpdateRequestStatusSerializer
 from .models import CustomUser, Request
+from rest_framework import status
 from rest_framework import permissions, viewsets
 from .permissions import IsOwner, IsManager
-from rest_framework.decorators import action
 
 
 class LoginView(APIView):
@@ -33,39 +33,52 @@ class RegisterView(APIView):
             return Response({'message': 'User registered successfully!'}, status=201)
         return Response(serializer.errors, status=400)
 
-class RequestViewSet(viewsets.ModelViewSet):
-    queryset = Request.objects.all()
-    serializer_class = RequestSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwner]
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+class UserRequestView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        """
-        This view returns a list of all the requests for the currently authenticated user.
-        """
-        return Request.objects.filter(user=self.request.user)
+    def get(self, request):
+        user_requests = Request.objects.filter(created_by=request.user)
+        serializer = RequestSerializer(user_requests, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = RequestSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(created_by=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk):
+        user_request = Request.objects.get(id=pk, created_by=request.user)
+        serializer = RequestSerializer(user_request, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        user_request = Request.objects.get(id=pk, created_by=request.user)
+        user_request.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class ManagerRequestViewSet(viewsets.ModelViewSet):
-    queryset = Request.objects.all()
-    serializer_class = RequestSerializer
-    permission_classes = [permissions.IsAuthenticated, IsManager]
+class ManagerRequestView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    @action(detail=True, methods=['put'])
-    def change_status(self, request, pk=None):
-        """
-        Change the status of a request for managers only.
-        """
-        request_obj = self.get_object()
-        status = request.data.get('status')
-        comment = request.data.get('manager_comment', '')
+    def get(self, request):
+        if not request.user.role == 'manager':
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        requests = Request.objects.all()
+        serializer = RequestSerializer(requests, many=True)
+        return Response(serializer.data)
 
-        if status not in ['approved', 'denied', 'need_clarification']:
-            return Response({'detail': 'Invalid status'}, status=400)
-
-        request_obj.status = status
-        request_obj.manager_comment = comment
-        request_obj.save()
-        return Response(RequestSerializer(request_obj).data)
+    def patch(self, request, pk):
+        if not request.user.role == 'manager':
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        req = Request.objects.get(id=pk)
+        req.status = request.data.get('status', req.status)
+        req.manager_comment = request.data.get('manager_comment', req.manager_comment)
+        req.save()
+        serializer = RequestSerializer(req)
+        return Response(serializer.data)
