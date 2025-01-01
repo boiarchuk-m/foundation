@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser
+from .models import CustomUser, Request
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,3 +15,13 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
+
+class RequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Request
+        fields = '__all__'
+
+class UpdateRequestStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Request
+        fields = ['status', 'manager_comment']
