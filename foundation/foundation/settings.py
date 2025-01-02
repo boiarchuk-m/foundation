@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 import dj_database_url
 from decouple import config
+from datetime import timedelta
 load_dotenv()
 
 
@@ -55,11 +56,12 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+}
 
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://localhost:3001', # React frontend URL
-]
+CORS_ALLOW_ALL_ORIGINS = True
 
 AUTH_USER_MODEL = 'foundation_app.CustomUser'
 
@@ -133,3 +135,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CORS_ALLOWED_ALL_ORIGINS = True
+CORS_ALLOWED_CREDENTIALS = True
+

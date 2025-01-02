@@ -3,9 +3,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import UserSerializer, RequestSerializer, UpdateRequestStatusSerializer
+from .serializers import UserSerializer, RequestSerializer
 from .models import CustomUser, Request
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework import permissions, viewsets
 from .permissions import IsOwner, IsManager
 
@@ -34,51 +34,25 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=400)
 
 
-class UserRequestView(APIView):
+class RequestListCreate(generics.ListCreateAPIView):
+    serializer_class = RequestSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        user_requests = Request.objects.filter(created_by=request.user)
-        serializer = RequestSerializer(user_requests, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        user = self.request.user
+        return Request.objects.filter(author=user)
 
-    def post(self, request):
-        serializer = RequestSerializer(data=request.data)
+    def perform_create(self, serializer):
         if serializer.is_valid():
-            serializer.save(created_by=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save(author=self.request.user)
+        else:
+            print(serializer.errors)
 
-    def put(self, request, pk):
-        user_request = Request.objects.get(id=pk, created_by=request.user)
-        serializer = RequestSerializer(user_request, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        user_request = Request.objects.get(id=pk, created_by=request.user)
-        user_request.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class ManagerRequestView(APIView):
+class RequestDelete(generics.DestroyAPIView):
+    serializer_class = RequestSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        if not request.user.role == 'manager':
-            return Response(status=status.HTTP_403_FORBIDDEN)
-        requests = Request.objects.all()
-        serializer = RequestSerializer(requests, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        user = self.request.user
+        return Request.objects.filter(author=user)
 
-    def patch(self, request, pk):
-        if not request.user.role == 'manager':
-            return Response(status=status.HTTP_403_FORBIDDEN)
-        req = Request.objects.get(id=pk)
-        req.status = request.data.get('status', req.status)
-        req.manager_comment = request.data.get('manager_comment', req.manager_comment)
-        req.save()
-        serializer = RequestSerializer(req)
-        return Response(serializer.data)

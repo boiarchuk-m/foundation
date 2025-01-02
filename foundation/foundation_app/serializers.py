@@ -16,12 +16,10 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+
 class RequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Request
-        fields = '__all__'
+        fields = ["id", "created_at", "author", "full_name", "military_unit_number", "phone_number", "request_text", "status"]
+        extra_kwargs = {"author": {"read_only": True}}
 
-class UpdateRequestStatusSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Request
-        fields = ['status', 'manager_comment']
