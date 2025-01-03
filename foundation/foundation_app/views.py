@@ -56,3 +56,21 @@ class RequestDelete(generics.DestroyAPIView):
         user = self.request.user
         return Request.objects.filter(author=user)
 
+
+class UpdateRequestView(APIView):
+    def put(self, request, pk, format=None):
+        try:
+            obj = Request.objects.get(pk=pk)
+        except Request.DoesNotExist:
+            return Response({'error': 'Object not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = RequestSerializer(obj, data=request.data, partial=True)  # For partial updates
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class GetRequestView(generics.RetrieveAPIView):
+    queryset = Request.objects.all()
+    serializer_class = RequestSerializer
+

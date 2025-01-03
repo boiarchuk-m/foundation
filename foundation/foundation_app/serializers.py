@@ -20,6 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
 class RequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Request
-        fields = ["id", "created_at", "author", "full_name", "military_unit_number", "phone_number", "request_text", "status"]
+        fields = ["id", "created_at", "author", "full_name",
+                  "military_unit_number", "phone_number", "request_text", "status"]
         extra_kwargs = {"author": {"read_only": True}}
 
